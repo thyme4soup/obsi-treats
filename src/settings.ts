@@ -6,13 +6,15 @@ export interface ObsiTreatSettings {
 	mqttUser: string;
 	mqttPassword: string;
 	user: string;
+	dailyFolder: string;
 }
 
 export const DEFAULT_SETTINGS: ObsiTreatSettings = {
 	mqttBroker: 'mqtt://your-broker-here:1883',
 	mqttUser: 'default-user',
 	mqttPassword: 'default-password',
-	user: 'default-user'
+	user: 'default-user',
+	dailyFolder: 'Daily'
 }
 
 export class ObsiTreatSettingsTab extends PluginSettingTab {
@@ -66,6 +68,16 @@ export class ObsiTreatSettingsTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.user)
 				.onChange(async (value) => {
 					this.plugin.settings.user = value;
+					await this.plugin.saveSettings();
+				}));
+		new Setting(containerEl)
+			.setName('Daily Folder')
+			.setDesc('The folder where your daily notes are stored')
+			.addText(text => text
+				.setPlaceholder('Enter your daily folder name')
+				.setValue(this.plugin.settings.dailyFolder)
+				.onChange(async (value) => {
+					this.plugin.settings.dailyFolder = value;
 					await this.plugin.saveSettings();
 				}));
 	}
