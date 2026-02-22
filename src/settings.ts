@@ -1,24 +1,24 @@
 import {App, PluginSettingTab, Setting} from "obsidian";
-import MyPlugin from "./main";
+import ObsiTreats from "./main";
 
-export interface MyPluginSettings {
+export interface ObsiTreatSettings {
 	mqttBroker: string;
 	mqttUser: string;
 	mqttPassword: string;
 	user: string;
 }
 
-export const DEFAULT_SETTINGS: MyPluginSettings = {
+export const DEFAULT_SETTINGS: ObsiTreatSettings = {
 	mqttBroker: 'mqtt://your-broker-here:1883',
 	mqttUser: 'default-user',
 	mqttPassword: 'default-password',
 	user: 'default-user'
 }
 
-export class ObsiTreatSettings extends PluginSettingTab {
-	plugin: MyPlugin;
+export class ObsiTreatSettingsTab extends PluginSettingTab {
+	plugin: ObsiTreats;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: ObsiTreats) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -29,7 +29,7 @@ export class ObsiTreatSettings extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName('MQTT Broker URL')
+			.setName('Broker URL for MQTT service')
 			.setDesc('The URL of your MQTT broker (e.g., mqtt://localhost:1883)')
 			.addText(text => text
 				.setPlaceholder('Enter your MQTT broker URL')
@@ -39,7 +39,7 @@ export class ObsiTreatSettings extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 		new Setting(containerEl)
-			.setName('MQTT User')
+			.setName('User Name for MQTT service')
 			.setDesc('The user name for your MQTT broker')
 			.addText(text => text
 				.setPlaceholder('Enter your MQTT user name')
