@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-sample-plugin",
+	"name": "obsi-treats",
 	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "This plugin gives treat points when completing tasks.",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {
@@ -21,7 +21,8 @@
 		"typescript": "^5.8.3",
 		"typescript-eslint": "8.35.1",
 		"@eslint/js": "9.30.1",
-		"jiti": "2.6.1"
+		"jiti": "2.6.1",
+		"mqtt": "^5.15.0"
 	},
 	"dependencies": {
 		"obsidian": "latest"

@@ -1,76 +1,64 @@
-import {App, Editor, MarkdownView, Modal, Notice, Plugin} from 'obsidian';
-import {DEFAULT_SETTINGS, MyPluginSettings, SampleSettingTab} from "./settings";
+import {App, Editor, MarkdownView, Modal, Notice, Plugin, TAbstractFile, TFile} from 'obsidian';
+import {DEFAULT_SETTINGS, MyPluginSettings, ObsiTreatSettings} from "./settings";
+import mqtt, {MqttClient} from "mqtt";
 
-// Remember to rename these classes and interfaces!
+const PROCESSED_TAG = 'treatbot/processed';
+const WATCH_TAG = 'treatbot/watch';
+const DEFAULT_BOUNTY = 5;
+const COMPLETED_TAG = 'closed';
+const DEFAULT_STREAK_BONUS = 2;
+const BOUNTY_PROPERTY = 'bounty';
 
 export default class MyPlugin extends Plugin {
 	settings: MyPluginSettings;
+	mqttClient: MqttClient;
 
 	async onload() {
+		this.mqttClient = mqtt.connect('mqtt://mqtt-ws.souphub.io:80');
+		this.mqttClient.on('connect', () => {
+			console.log('Connected to MQTT broker');
+		});
+
 		await this.loadSettings();
 
-		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('dice', 'Sample', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
+		// Periodically check the dailies for habit streaks
+		this.registerInterval(window.setInterval(() => {
+			console.log('setInterval')
+		}, 5 * 60 * 1000));
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status bar text');
-
-		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: 'open-modal-simple',
-			name: 'Open modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
-			}
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'replace-selected',
-			name: 'Replace selected content',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				editor.replaceSelection('Sample editor command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-modal-complex',
-			name: 'Open modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
-
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-				return false;
-			}
+		// Listen for file changes such as closing tasks
+		this.app.vault.on('modify', (file) => {
+			this.checkForTaskUpdate(file);
 		});
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+		this.addSettingTab(new ObsiTreatSettings(this.app, this));
+	}
 
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			new Notice("Click");
+	async checkForTaskUpdate(file: TAbstractFile) {
+		// Get the file properties
+		this.app.fileManager.processFrontMatter(file as TFile, (frontMatter) => {
+			let tags = frontMatter['tags'];
+			// Check if the file has a "task" property
+			if (tags && tags.includes('task') && tags.includes(WATCH_TAG)) {
+				// If it does, check if the task is marked as completed
+				if (tags.includes(COMPLETED_TAG) && !tags.includes(PROCESSED_TAG)) {
+					// add the "processed" tag to prevent duplicate processing
+					tags.push(PROCESSED_TAG);
+					frontMatter['tags'] = tags;
+					// emit the event
+					let bounty = frontMatter[BOUNTY_PROPERTY] || DEFAULT_BOUNTY;
+					console.log(`Task completed! Awarding ${bounty} points.`);
+					this.mqttClient.publish('/treatbot/soup', `${bounty}`);
+				}
+			}
 		});
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
-
 	}
 
 	onunload() {
+		if (this.mqttClient) {
+			this.mqttClient.end();
+		}
 	}
 
 	async loadSettings() {
