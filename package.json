@@ -1,6 +1,6 @@
 {
 	"name": "obsi-treats",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "This plugin gives treat points when completing tasks.",
 	"main": "main.js",
 	"type": "module",
