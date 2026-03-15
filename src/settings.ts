@@ -2,19 +2,17 @@ import {App, PluginSettingTab, Setting} from "obsidian";
 import ObsiTreats from "./main";
 
 export interface ObsiTreatSettings {
-	mqttBroker: string;
-	mqttUser: string;
-	mqttPassword: string;
 	user: string;
 	dailyFolder: string;
+	inlineTreatValue: number;
+	treatServerUrl: string;
 }
 
 export const DEFAULT_SETTINGS: ObsiTreatSettings = {
-	mqttBroker: 'mqtt://your-broker-here:1883',
-	mqttUser: 'default-user',
-	mqttPassword: 'default-password',
+	treatServerUrl: 'https://your-treat-server-url/',
 	user: 'default-user',
-	dailyFolder: 'Daily'
+	dailyFolder: 'Daily',
+	inlineTreatValue: 1,
 }
 
 export class ObsiTreatSettingsTab extends PluginSettingTab {
@@ -31,33 +29,13 @@ export class ObsiTreatSettingsTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName('Broker URL for MQTT service')
-			.setDesc('The URL of your MQTT broker (e.g., mqtt://localhost:1883)')
+			.setName('Treat Server URL')
+			.setDesc('The base URL for your treat server (e.g., https://your-treat-server.com/)')
 			.addText(text => text
-				.setPlaceholder('Enter your MQTT broker URL')
-				.setValue(this.plugin.settings.mqttBroker)
+				.setPlaceholder('Enter your treat server URL')
+				.setValue(this.plugin.settings.treatServerUrl)
 				.onChange(async (value) => {
-					this.plugin.settings.mqttBroker = value;
-					await this.plugin.saveSettings();
-				}));
-		new Setting(containerEl)
-			.setName('User Name for MQTT service')
-			.setDesc('The user name for your MQTT broker')
-			.addText(text => text
-				.setPlaceholder('Enter your MQTT user name')
-				.setValue(this.plugin.settings.mqttUser)
-				.onChange(async (value) => {
-					this.plugin.settings.mqttUser = value;
-					await this.plugin.saveSettings();
-				}));
-		new Setting(containerEl)
-			.setName('MQTT Password')
-			.setDesc('The password for your MQTT broker')
-			.addText(text => text
-				.setPlaceholder('Enter your MQTT password')
-				.setValue(this.plugin.settings.mqttPassword)
-				.onChange(async (value) => {
-					this.plugin.settings.mqttPassword = value;
+					this.plugin.settings.treatServerUrl = value;
 					await this.plugin.saveSettings();
 				}));
 		new Setting(containerEl)
@@ -78,6 +56,16 @@ export class ObsiTreatSettingsTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.dailyFolder)
 				.onChange(async (value) => {
 					this.plugin.settings.dailyFolder = value;
+					await this.plugin.saveSettings();
+				}));
+		new Setting(containerEl)
+			.setName('Inline Treat Value')
+			.setDesc('The value of an inline treat')
+			.addText(text => text
+				.setPlaceholder('Enter your inline treat value')
+				.setValue(this.plugin.settings.inlineTreatValue.toString())
+				.onChange(async (value) => {
+					this.plugin.settings.inlineTreatValue = parseInt(value);
 					await this.plugin.saveSettings();
 				}));
 	}
